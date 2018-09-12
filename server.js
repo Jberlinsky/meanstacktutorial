@@ -19,7 +19,7 @@ app.use('/api', appRoutes); // Assign name to end points (e.g., '/api/management
 // 
 // <---------- REPLACE WITH YOUR MONGOOSE CONFIGURATION ---------->
 // 
-mongoose.connect('mongodb://root:password@ds027215.mlab.com:27215/gugui3z24', function(err) {
+mongoose.connect('mongodb://root:foobarbaz@db.basic-stack-db-lb.il4.us-central1.lb.basic-stack-example-10.internal:27017/mean', function(err) {
     if (err) {
         console.log('Not connected to the database: ' + err); // Log to console if unable to connect to database
     } else {
