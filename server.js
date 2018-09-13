@@ -8,6 +8,7 @@ var appRoutes = require('./app/routes/api')(router); // Import the application e
 var path = require('path'); // Import path module
 var passport = require('passport'); // Express-compatible authentication middleware for Node.js.
 var social = require('./app/passport/passport')(app, passport); // Import passport.js End Points/API
+var axios = require('axios');
 
 app.use(bodyParser.json()); // Body-parser middleware
 app.use(bodyParser.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
@@ -17,17 +18,37 @@ app.use('/api', appRoutes); // Assign name to end points (e.g., '/api/management
 // 
 // <---------- REPLACE WITH YOUR MONGOOSE CONFIGURATION ---------->
 // 
-var connectWithRetry = function() {
-    return mongoose.connect('mongodb://root:foobarbaz@db.basic-stack-db-lb.il4.us-central1.lb.basic-stack-example-10.internal:27017/mean', function(err) {
+
+var connectWithRetry = function(region, projectId) {
+    return mongoose.connect('mongodb://root:foobarbaz@db.basic-stack-db-lb.il4.' + region + '.lb.' + projectId + '.internal:27017/mean', function(err) {
         if (err) {
             console.error('Failed to connect to MongoDB on startup: ' + err + '. Retrying in 5 seconds.');
-            setTimeout(connectWithRetry, 5000);
+            setTimeout(function() {
+                connectWithRetry(region, projectId);
+            }, 5000);
         } else {
             console.log("Successfully connected to MongoDB");
         }
     });
 };
-connectWithRetry();
+
+var metadataClient = axios.create({
+    baseURL: 'http://metadata.google.internal/computeMetadata/v1/',
+    timeout: 1000,
+    headers: {"Metadata-Flavor": "Google"}
+});
+metadataClient.get("instance/zone").then(function(response) {
+    var zoneUrl = response.data;
+    var zone = zoneUrl.split("/")[3];
+    var zoneParts = zone.split("-");
+    var region = zoneParts[0] + '-' + zoneParts[1];
+    console.log("Running in GCP region " + region);
+    metadataClient.get("project/project-id").then(function(response) {
+        var projectId = response.data;
+        console.log("Running in GCP project " + projectId);
+        connectWithRetry(region, projectId);
+    });
+});
 
 // Set Application Static Layout
 app.get('*', function(req, res) {
