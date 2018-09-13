@@ -17,13 +17,17 @@ app.use('/api', appRoutes); // Assign name to end points (e.g., '/api/management
 // 
 // <---------- REPLACE WITH YOUR MONGOOSE CONFIGURATION ---------->
 // 
-mongoose.connect('mongodb://root:foobarbaz@db.basic-stack-db-lb.il4.us-central1.lb.basic-stack-example-10.internal:27017/mean', function(err) {
-    if (err) {
-        console.log('Not connected to the database: ' + err); // Log to console if unable to connect to database
-    } else {
-        console.log('Successfully connected to MongoDB'); // Log to console if able to connect to database
-    }
-});
+var connectWithRetry = function() {
+    return mongoose.connect('mongodb://root:foobarbaz@db.basic-stack-db-lb.il4.us-central1.lb.basic-stack-example-10.internal:27017/mean', function(err) {
+        if (err) {
+            console.error('Failed to connect to MongoDB on startup: ' + err + '. Retrying in 5 seconds.');
+            setTimeout(connectWithRetry, 5000);
+        } else {
+            console.log("Successfully connected to MongoDB");
+        }
+    });
+};
+connectWithRetry();
 
 // Set Application Static Layout
 app.get('*', function(req, res) {
